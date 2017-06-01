@@ -123,7 +123,17 @@ assign arduino_reset_n = 1'b1;
 
 assign gpio_0 = 36'hZZZZZZZZZ;
 assign gpio_1 = 36'hZZZZZZZZZ;
-assign fpga_led_pio = fpga_led_internal;
+//assign fpga_led_pio = fpga_led_internal;
+
+
+assign fpga_led_pio[7:6] = 2'h0;
+
+reg[31:0] debug_counter = 32'h0;
+assign fpga_led_pio[5:0] = debug_counter[25:20];
+always @(posedge fpga_clk1_50)
+begin
+	debug_counter <= debug_counter + 1;
+end
 
 
 // SoC sub-system module
