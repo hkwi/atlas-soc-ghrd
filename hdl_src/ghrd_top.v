@@ -125,14 +125,87 @@ assign gpio_0 = 36'hZZZZZZZZZ;
 assign gpio_1 = 36'hZZZZZZZZZ;
 //assign fpga_led_pio = fpga_led_internal;
 
-
-assign fpga_led_pio[7:6] = 2'h0;
-
 reg[31:0] debug_counter = 32'h0;
-assign fpga_led_pio[5:0] = debug_counter[25:20];
+assign fpga_led_pio[5:0] = debug_counter[22:17];
 always @(posedge fpga_clk1_50)
 begin
 	debug_counter <= debug_counter + 1;
+end
+
+reg [13:0] onchip_memory2_0_s2_address;
+reg onchip_memory2_0_s2_write;
+reg [31:0] onchip_memory2_0_s2_writedata;
+wire [31:0] onchip_memory2_0_s2_readdata;
+
+reg [31:0] simple_pio_write_data;
+reg simple_pio_write = 1'b0;
+wire [31:0] simple_pio_read_data;
+
+assign fpga_led_pio[7:6] = simple_pio_read_data[1:0];
+reg [31:0] status_id = 32'h0;
+reg [31:0] status_counter = 32'h0;
+reg [31:0] address_counter = 32'h0;
+reg [31:0] data_buf = 32'h0;
+reg [31:0] simple_pio_read_data_reg;
+
+always @(posedge fpga_clk1_50) begin
+  if(hps_fpga_reset_n == 1'b0) begin
+    status_id <= 32'h0;
+    onchip_memory2_0_s2_write <= 1'b0;
+    simple_pio_write <= 1'b0;
+  end else begin
+    simple_pio_read_data_reg <= simple_pio_read_data;
+    case(status_id)
+      32'h0: begin
+        status_counter <= 32'h0;
+        address_counter <= 32'h0;
+        if(simple_pio_read_data[0] == 1'b1 && simple_pio_read_data_reg[0] == 1'b0) begin
+          status_id <= 32'h1;
+          simple_pio_write_data <= 32'h2;
+          simple_pio_write <= 1'b1;
+        end else begin
+          simple_pio_write <= 1'b0;
+        end
+      end
+      32'h1: begin
+        simple_pio_write <= 1'b0;
+        case(status_counter)
+          0: begin
+            onchip_memory2_0_s2_address <= {22'h0, address_counter[9:0]};
+            status_counter <= status_counter + 1;
+            onchip_memory2_0_s2_write <= 1'b0;
+          end
+          1: begin
+            onchip_memory2_0_s2_address <= {22'h1, address_counter[9:0]};
+            status_counter <= status_counter + 1;
+          end
+          2: begin
+            data_buf <= onchip_memory2_0_s2_readdata;
+            status_counter <= status_counter + 1;
+          end
+          3: begin
+            onchip_memory2_0_s2_address <= {22'h2, address_counter[9:0]};
+            onchip_memory2_0_s2_writedata <= data_buf * onchip_memory2_0_s2_readdata;
+            onchip_memory2_0_s2_write <= 1'b1;
+            if(address_counter[9:0] == 10'h03ff) begin
+              status_counter <= 32'h0;
+              address_counter <= 32'h0;
+              status_id <= 32'h2;
+            end else begin
+              status_counter <= 32'h0;
+              address_counter <= address_counter + 1;
+            end
+          end
+        endcase
+      end
+      32'h2: begin
+        onchip_memory2_0_s2_write <= 1'b0;
+        simple_pio_write <= 1'b1;
+        simple_pio_write_data <= 32'h0;
+        status_id <= 32'h0;
+      end
+    endcase
+  end
 end
 
 
@@ -221,7 +294,20 @@ soc_system soc_inst (
   .hps_0_hps_io_hps_io_gpio_inst_GPIO53  (hps_gpio_GPIO53),
   .hps_0_hps_io_hps_io_gpio_inst_GPIO54  (hps_gpio_GPIO54),
   .hps_0_hps_io_hps_io_gpio_inst_GPIO61  (hps_gpio_GPIO61), 
-  
+  //onchip_memory
+  .onchip_memory2_0_s2_readdata          (onchip_memory2_0_s2_readdata),
+  .onchip_memory2_0_s2_writedata         (onchip_memory2_0_s2_writedata),
+  .onchip_memory2_0_s2_address           (onchip_memory2_0_s2_address),
+  .onchip_memory2_0_s2_write             (onchip_memory2_0_s2_write),
+  .onchip_memory2_0_s2_clken             (1'b1),
+  .onchip_memory2_0_s2_byteenable        (4'b1111),
+  .onchip_memory2_0_s2_chipselect        (1'b1),
+  .onchip_memory2_0_clk2_clk             (fpga_clk1_50),
+  .onchip_memory2_0_reset2_reset         (~hps_fpga_reset_n),
+  // simple_pio
+  .simple_pio_0a_readdata (simple_pio_read_data),
+  .simple_pio_0a_writedata (simple_pio_write_data),
+  .simple_pio_0a_write (simple_pio_write),
   //STM
   .hps_0_f2h_stm_hw_events_stm_hwevents  (stm_hw_events),  
  

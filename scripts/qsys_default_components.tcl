@@ -51,12 +51,12 @@ add_instance onchip_memory2_0 altera_avalon_onchip_memory2
 set_instance_parameter_value onchip_memory2_0 {allowInSystemMemoryContentEditor} {0}
 set_instance_parameter_value onchip_memory2_0 {blockType} {AUTO}
 set_instance_parameter_value onchip_memory2_0 {dataWidth} {32}
-set_instance_parameter_value onchip_memory2_0 {dualPort} {0}
+set_instance_parameter_value onchip_memory2_0 {dualPort} {1}
 set_instance_parameter_value onchip_memory2_0 {initMemContent} {1}
 set_instance_parameter_value onchip_memory2_0 {initializationFileName} {onchip_mem.hex}
 set_instance_parameter_value onchip_memory2_0 {instanceID} {NONE}
-#set_instance_parameter_value onchip_memory2_0 {memorySize} {65536.0}
-set_instance_parameter_value onchip_memory2_0 {memorySize} {32768.0}
+set_instance_parameter_value onchip_memory2_0 {memorySize} {65536.0}
+#set_instance_parameter_value onchip_memory2_0 {memorySize} {32768.0}
 set_instance_parameter_value onchip_memory2_0 {readDuringWriteMode} {DONT_CARE}
 set_instance_parameter_value onchip_memory2_0 {simAllowMRAMContentsFile} {0}
 set_instance_parameter_value onchip_memory2_0 {simMemInitOnlyFilename} {0}
@@ -77,7 +77,9 @@ add_instance intr_capturer_0 intr_capturer
 set_instance_parameter_value intr_capturer_0 {NUM_INTR} {32}
 
 add_instance axi_bridge_for_acp_128_0 axi_bridge_for_acp_128 1.0
-    
+
+add_instance simple_pio_0 simple_pio
+ 
 # connections and connection parameters
 # LW Bridge
 add_connection hps_0.h2f_lw_axi_master lw_mm_bridge.s0 avalon
@@ -99,6 +101,8 @@ add_connection lw_mm_bridge.m0 intr_capturer_0.avalon_slave_0 avalon
 set_connection_parameter_value lw_mm_bridge.m0/intr_capturer_0.avalon_slave_0 arbitrationPriority {1}
 set_connection_parameter_value lw_mm_bridge.m0/intr_capturer_0.avalon_slave_0 baseAddress {0x6000}
 set_connection_parameter_value lw_mm_bridge.m0/intr_capturer_0.avalon_slave_0 defaultConnection {0}    
+
+add_connection lw_mm_bridge.m0 simple_pio_0.b avalon
 
 # AXI Bridge
 add_connection hps_0.h2f_axi_master onchip_memory2_0.s1 avalon
@@ -140,6 +144,7 @@ add_connection clk_0.clk onchip_memory2_0.clk1 clock
 add_connection clk_0.clk fpga_only_master.clk clock
 add_connection clk_0.clk f2sdram_only_master.clk clock
 add_connection clk_0.clk intr_capturer_0.clock clock
+add_connection clk_0.clk simple_pio_0.clock clock
 add_connection hps_0.h2f_user0_clock axi_bridge_for_acp_128_0.clock clock
 
 # Resets
@@ -152,6 +157,7 @@ add_connection clk_0.clk_reset fpga_only_master.clk_reset reset
 add_connection clk_0.clk_reset f2sdram_only_master.clk_reset reset
 add_connection clk_0.clk_reset intr_capturer_0.reset_sink reset
 add_connection clk_0.clk_reset axi_bridge_for_acp_128_0.reset reset
+add_connection clk_0.clk_reset simple_pio_0.reset reset
 
 # exported interfaces
 add_interface hps_0_h2f_clk clock source
@@ -166,6 +172,17 @@ add_interface clk clock sink
 set_interface_property clk EXPORT_OF clk_0.clk_in
 add_interface reset reset sink
 set_interface_property reset EXPORT_OF clk_0.clk_in_reset
+
+add_interface onchip_memory2_0_s2 avalon slave
+set_interface_property onchip_memory2_0_s2 EXPORT_OF onchip_memory2_0.s2
+add_interface onchip_memory2_0_clk2 clock sink
+set_interface_property onchip_memory2_0_clk2 EXPORT_OF onchip_memory2_0.clk2
+add_interface onchip_memory2_0_reset2 reset sink
+set_interface_property onchip_memory2_0_reset2 EXPORT_OF onchip_memory2_0.reset2
+
+add_interface simple_pio_0a avalon slave
+set_interface_property simple_pio_0a EXPORT_OF simple_pio_0.a
+
 
 # interconnect requirements
 set_interconnect_requirement {$system} {qsys_mm.clockCrossingAdapter} {HANDSHAKE}
