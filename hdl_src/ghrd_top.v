@@ -114,6 +114,7 @@ wire [27:0] 	stm_hw_events;
 
 wire [1:0] fpga_debounced_buttons;
 wire [7:0] fpga_led_internal;
+wire [31:0] onchip_memory2_0_s2_readdata;
 
 //assignments
 assign stm_hw_events    = {{14{1'b0}}, fpga_dipsw_pio, fpga_led_internal, fpga_debounced_buttons};
@@ -123,8 +124,8 @@ assign arduino_reset_n = 1'b1;
 
 assign gpio_0 = 36'hZZZZZZZZZ;
 assign gpio_1 = 36'hZZZZZZZZZ;
-assign fpga_led_pio = fpga_led_internal;
-
+//assign fpga_led_pio = fpga_led_internal;
+assign fpga_led_pio = onchip_memory2_0_s2_readdata[7:0];
 
 // SoC sub-system module
 soc_system soc_inst (
@@ -214,7 +215,13 @@ soc_system soc_inst (
   
   //STM
   .hps_0_f2h_stm_hw_events_stm_hwevents  (stm_hw_events),  
- 
+  //ONCHIP_MEMORY
+  .onchip_memory2_0_s2_address           (13'h0),
+  .onchip_memory2_0_s2_readdata          (onchip_memory2_0_s2_readdata),
+  .onchip_memory2_0_s2_clken             (1'h1),
+  .onchip_memory2_0_s2_byteenable        (4'b1111),
+  .onchip_memory2_0_clk2_clk             (fpga_clk1_50),
+  .onchip_memory2_0_reset2_reset         (~hps_fpga_reset_n),
   //PIOs
   .button_pio_export                     (fpga_debounced_buttons),
   .dipsw_pio_export                      (fpga_dipsw_pio),

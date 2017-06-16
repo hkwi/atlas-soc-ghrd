@@ -51,7 +51,7 @@ add_instance onchip_memory2_0 altera_avalon_onchip_memory2
 set_instance_parameter_value onchip_memory2_0 {allowInSystemMemoryContentEditor} {0}
 set_instance_parameter_value onchip_memory2_0 {blockType} {AUTO}
 set_instance_parameter_value onchip_memory2_0 {dataWidth} {32}
-set_instance_parameter_value onchip_memory2_0 {dualPort} {0}
+set_instance_parameter_value onchip_memory2_0 {dualPort} {1}
 set_instance_parameter_value onchip_memory2_0 {initMemContent} {1}
 set_instance_parameter_value onchip_memory2_0 {initializationFileName} {onchip_mem.hex}
 set_instance_parameter_value onchip_memory2_0 {instanceID} {NONE}
@@ -166,6 +166,12 @@ add_interface clk clock sink
 set_interface_property clk EXPORT_OF clk_0.clk_in
 add_interface reset reset sink
 set_interface_property reset EXPORT_OF clk_0.clk_in_reset
+add_interface onchip_memory2_0_s2 avalon slave
+set_interface_property onchip_memory2_0_s2 EXPORT_OF onchip_memory2_0.s2
+add_interface onchip_memory2_0_clk2 clock sink
+set_interface_property onchip_memory2_0_clk2 EXPORT_OF onchip_memory2_0.clk2
+add_interface onchip_memory2_0_reset2 reset sink
+set_interface_property onchip_memory2_0_reset2 EXPORT_OF onchip_memory2_0.reset2
 
 # interconnect requirements
 set_interconnect_requirement {$system} {qsys_mm.clockCrossingAdapter} {HANDSHAKE}
